@@ -1,0 +1,13 @@
+build/*
+*~
+*.orig
+*.bin
+.vscode/
+*.jpg
+*.avi
+*.mp4
+*.jpg
+*.png
+*.voc
+*.map
+lib/
