@@ -196,6 +196,32 @@ public:
     return slam_feats;
   }
 
+  std::vector<Eigen::Vector3d> get_slam_map() {
+    static std::map<size_t, Eigen::Vector3d> map_pts;
+    for (auto &f : state->_features_SLAM) {
+      if ((int)f.first <= state->_options.max_aruco_features)
+        continue;
+      if (LandmarkRepresentation::is_relative_representation(f.second->_feat_representation)) {
+        // Assert that we have an anchor pose for this feature
+        assert(f.second->_anchor_cam_id != -1);
+        // Get calibration for our anchor camera
+        Eigen::Matrix<double, 3, 3> R_ItoC = state->_calib_IMUtoCAM.at(f.second->_anchor_cam_id)->Rot();
+        Eigen::Matrix<double, 3, 1> p_IinC = state->_calib_IMUtoCAM.at(f.second->_anchor_cam_id)->pos();
+        // Anchor pose orientation and position
+        Eigen::Matrix<double, 3, 3> R_GtoI = state->_clones_IMU.at(f.second->_anchor_clone_timestamp)->Rot();
+        Eigen::Matrix<double, 3, 1> p_IinG = state->_clones_IMU.at(f.second->_anchor_clone_timestamp)->pos();
+        // Feature in the global frame
+        map_pts[f.first] = R_GtoI.transpose() * R_ItoC.transpose() * (f.second->get_xyz(false) - p_IinC) + p_IinG;
+      } else {
+        map_pts[f.first] = f.second->get_xyz(false);
+      }
+    }
+    std::vector<Eigen::Vector3d> slam_feats;
+    slam_feats.reserve(map_pts.size());
+    for (const auto& it : map_pts) slam_feats.push_back(it.second);
+    return slam_feats;
+  }
+
   /// Returns 3d ARUCO features in the global frame
   std::vector<Eigen::Vector3d> get_features_ARUCO() {
     std::vector<Eigen::Vector3d> aruco_feats;
