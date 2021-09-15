@@ -9,12 +9,32 @@ using namespace ov_msckf;
 
 VioManagerOptions defaultParamEuroc();
 
-int main() {
+std::map<std::string, double> start_ts_dict = {{"MH_01_easy", 0},
+                                               {"MH_02_easy", 0},
+                                               {"MH_03_medium", 0},
+                                               {"MH_04_difficult", 0},
+                                               {"MH_05_difficult", 3 + 1403638518.077829376},
+                                               {"V1_01_easy", 5 + 1403715273.262142976},
+                                               {"V1_02_medium", 10 + 1403715523.912143104},
+                                               {"V1_03_difficult", 6 + 1403715886.584058112},
+                                               {"V2_01_easy", 4 + 1413393212.255760384},
+                                               {"V2_02_medium", 4 + 1413393886.005760512},
+                                               {"V2_03_difficult", 5 + 1413394881.555760384}};
+
+int main(int argc, char** argv) {
   auto params = defaultParamEuroc();
   std::shared_ptr<VioManager> sys = std::make_shared<VioManager>(params);
 
+  double start_ts = 0;
+  std::string datadir = argc > 1 ? argv[1] : "/home/symao/data/euroc/zip/MH_04_difficult";
+  for (const auto& it : start_ts_dict) {
+    if (vs::has(datadir, it.first)) {
+      start_ts = it.second;
+      break;
+    }
+  }
   auto dataset = vs::vio::createVioDataLoader(vs::vio::DATASET_EUROC_MONO);
-  bool ok = dataset->init({"/home/symao/data/euroc/zip/MH_04_difficult"});
+  bool ok = dataset->init({datadir});
   //   auto dataset = vio::createVioDataLoader(vio::DATASET_SYMAO_STEREO);
   //   bool ok = dataset->init({"/media/symao/My Passport/data/VIO/sf_vio/AGV-西部兴围中转场/1/2019-08-16-14-56-30"});
   //   auto dataset = vio::createVioDataLoader(vio::DATASET_UZH_STEREO);
@@ -36,6 +56,7 @@ int main() {
     switch (dataset->nextType()) {
       case vs::vio::MSG_IMU:
         ok = dataset->fetchImu(cur_imu);
+        if (cur_imu.ts < start_ts) break;
         // printf("IMU: %f gyro:(%.3f,%.3f,%.3f) acc:(%.3f,%.3f,%.3f)\n", cur_imu.ts, cur_imu.gyro[0], cur_imu.gyro[1],
         //        cur_imu.gyro[2], cur_imu.acc[0], cur_imu.acc[1], cur_imu.acc[2]);
         if (ok) {
@@ -48,6 +69,7 @@ int main() {
         break;
       case vs::vio::MSG_CAMERA: {
         ok = dataset->fetchCamera(cur_cam);
+        if (cur_cam.ts < start_ts) break;
         // printf("CAM: %f %d ", cur_cam.ts, static_cast<int>(cur_cam.imgs.size()));
         // for (const auto& img : cur_cam.imgs) printf(" [%dx%d,%d]", img.cols, img.rows, img.channels());
         // printf("\n");
@@ -63,10 +85,10 @@ int main() {
         // auto img_show = cur_cam.imgs[0];
         if (!img_show.empty()) cv::imshow("image", img_show);
         if (sys->initialized()) {
-          auto state = sys->get_state();
+          auto imu_state = sys->get_state()->_imu;
           Eigen::Isometry3d imu_pose =
-              vs::isom(state->_imu->quat()(3), state->_imu->quat()(0), state->_imu->quat()(1), state->_imu->quat()(2),
-                       state->_imu->pos()(0), state->_imu->pos()(1), state->_imu->pos()(2));
+              vs::isom(imu_state->quat()(3), imu_state->quat()(0), imu_state->quat()(1), imu_state->quat()(2),
+                       imu_state->pos()(0), imu_state->pos()(1), imu_state->pos()(2));
 #if ENABLE_VIZ
           static vs::Viz3D viz;
           static std::vector<cv::Affine3f> traj;
@@ -85,18 +107,19 @@ int main() {
         if (key == 27) return 0;
         break;
       }
-      case vs::vio::MSG_GTPOSE: {
+      case vs::vio::MSG_GTPOSE:
         ok = dataset->fetchGtPose(cur_gt_pose);
-        gt_poses.push_back(vs::isom2affine(vs::isom(cur_gt_pose.qw, cur_gt_pose.qx, cur_gt_pose.qy, cur_gt_pose.qz,
-                                                    cur_gt_pose.tx, cur_gt_pose.ty, cur_gt_pose.tz)));
+        if (cur_gt_pose.ts < start_ts) break;
+        if (ok)
+          gt_poses.push_back(vs::isom2affine(vs::isom(cur_gt_pose.qw, cur_gt_pose.qx, cur_gt_pose.qy, cur_gt_pose.qz,
+                                                      cur_gt_pose.tx, cur_gt_pose.ty, cur_gt_pose.tz)));
         break;
-      }
       default:
         break;
     }
     if (!ok) break;
   }
-  printf("Finish.\n");
+  printf("Finish. Press any key to exit.\n");
   getchar();
   cv::destroyAllWindows();
 }
@@ -142,7 +165,7 @@ VioManagerOptions defaultParamEuroc() {
   params.min_px_dist = 8;
   params.knn_ratio = 0.7;
   params.downsample_cameras = false;
-  params.use_multi_threading = true;
+  params.use_multi_threading = false;  // true;
   params.histogram_method = ov_core::TrackBase::HistogramMethod::HISTOGRAM;
 
   params.use_aruco = false;
