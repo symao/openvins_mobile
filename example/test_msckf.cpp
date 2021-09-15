@@ -29,6 +29,8 @@ int main() {
   const bool draw_img = true;
   vs::vio::ImuData cur_imu;
   vs::vio::CameraData cur_cam;
+  vs::vio::PoseData cur_gt_pose;
+  std::vector<cv::Affine3f> gt_poses;
   while (1) {
     ok = false;
     switch (dataset->nextType()) {
@@ -62,29 +64,31 @@ int main() {
         if (!img_show.empty()) cv::imshow("image", img_show);
         if (sys->initialized()) {
           auto state = sys->get_state();
-          Eigen::Isometry3d imu_pose = Eigen::Isometry3d::Identity();
-          imu_pose.linear() = Eigen::Quaterniond(state->_imu->quat()(3), state->_imu->quat()(0), state->_imu->quat()(1),
-                                                 state->_imu->quat()(2))
-                                  .toRotationMatrix();
-          imu_pose.translation() = state->_imu->pos();
+          Eigen::Isometry3d imu_pose =
+              vs::isom(state->_imu->quat()(3), state->_imu->quat()(0), state->_imu->quat()(1), state->_imu->quat()(2),
+                       state->_imu->pos()(0), state->_imu->pos()(1), state->_imu->pos()(2));
 #if ENABLE_VIZ
           static vs::Viz3D viz;
           static std::vector<cv::Affine3f> traj;
-          cv::Matx44f m;
-          for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++) m(i, j) = imu_pose.matrix()(i, j);
-          cv::Affine3f aff(m);
+          cv::Affine3f aff = vs::isom2affine(imu_pose);
           traj.push_back(aff);
           viz.updateWidget("cood", cv::viz::WCoordinateSystem());
           viz.updateWidget("traj", cv::viz::WTrajectory(traj, 2, 1.0, cv::viz::Color::green()));
+          if (!gt_poses.empty())
+            viz.updateWidget("traj_gt", cv::viz::WTrajectory(gt_poses, 2, 1.0, cv::viz::Color::red()));
           std::vector<cv::Affine3f> temp = {aff};
           viz.updateWidget("cur_pose", cv::viz::WTrajectoryFrustums(temp, cv::Vec2d(60 * 0.017453, 50 * 0.017453), 0.5,
                                                                     cv::viz::Color::red()));
 #endif
         }
-
         auto key = cv::waitKey(10);
         if (key == 27) return 0;
+        break;
+      }
+      case vs::vio::MSG_GTPOSE: {
+        ok = dataset->fetchGtPose(cur_gt_pose);
+        gt_poses.push_back(vs::isom2affine(vs::isom(cur_gt_pose.qw, cur_gt_pose.qx, cur_gt_pose.qy, cur_gt_pose.qz,
+                                                    cur_gt_pose.tx, cur_gt_pose.ty, cur_gt_pose.tz)));
         break;
       }
       default:
@@ -92,6 +96,7 @@ int main() {
     }
     if (!ok) break;
   }
+  printf("Finish.\n");
   getchar();
   cv::destroyAllWindows();
 }
