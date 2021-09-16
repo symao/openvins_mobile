@@ -24,7 +24,6 @@
 
 #include <Eigen/StdVector>
 #include <algorithm>
-#include <boost/filesystem.hpp>
 #include <fstream>
 #include <memory>
 #include <string>

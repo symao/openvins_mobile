@@ -23,6 +23,7 @@
 
 #include "types/Landmark.h"
 #include <memory>
+#include <vs_common/vs_os.h>
 
 using namespace ov_core;
 using namespace ov_type;
@@ -85,13 +86,12 @@ VioManager::VioManager(VioManagerOptions &params_) {
   // If we are recording statistics, then open our file
   if (params.record_timing_information) {
     // If the file exists, then delete it
-    if (boost::filesystem::exists(params.record_timing_filepath)) {
-      boost::filesystem::remove(params.record_timing_filepath);
+    if (vs::exists(params.record_timing_filepath.c_str())) {
+      vs::remove(params.record_timing_filepath.c_str());
       printf(YELLOW "[STATS]: found old file found, deleted...\n" RESET);
     }
     // Create the directory that we will open the file in
-    boost::filesystem::path p(params.record_timing_filepath);
-    boost::filesystem::create_directories(p.parent_path());
+    vs::makedirs(vs::basename(params.record_timing_filepath.c_str()).c_str());
     // Open our statistics file!
     of_statistics.open(params.record_timing_filepath, std::ofstream::out | std::ofstream::app);
     // Write the header information into it
