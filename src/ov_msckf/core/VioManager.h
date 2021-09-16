@@ -340,7 +340,7 @@ protected:
 
   // Timing statistic file and variables
   std::ofstream of_statistics;
-  boost::posix_time::ptime rT1, rT2, rT3, rT4, rT5, rT6, rT7;
+  std::chrono::system_clock::time_point rT1, rT2, rT3, rT4, rT5, rT6, rT7;
 
   // Track how much distance we have traveled
   double timelastupdate = -1;

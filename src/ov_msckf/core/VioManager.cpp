@@ -187,7 +187,7 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
                                              const std::vector<std::vector<std::pair<size_t, Eigen::VectorXf>>> &feats) {
 
   // Start timing
-  rT1 = boost::posix_time::microsec_clock::local_time();
+  rT1 = std::chrono::system_clock::now();
 
   // Check if we actually have a simulated tracker
   // If not, recreate and re-cast the tracker to our simulation tracker
@@ -203,7 +203,7 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
   // Feed our simulation tracker
   trackSIM->feed_measurement_simulation(timestamp, camids, feats);
   trackDATABASE->append_new_measurements(trackSIM->get_feature_database());
-  rT2 = boost::posix_time::microsec_clock::local_time();
+  rT2 = std::chrono::system_clock::now();
 
   // Check if we should do zero-velocity, if so update the state with it
   // Note that in the case that we only use in the beginning initialization phase
@@ -261,7 +261,7 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
 void VioManager::track_image_and_update(const ov_core::CameraData &message_const) {
 
   // Start timing
-  rT1 = boost::posix_time::microsec_clock::local_time();
+  rT1 = std::chrono::system_clock::now();
 
   // Assert we have valid measurement data and ids
   assert(!message_const.sensor_ids.empty());
@@ -295,7 +295,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     trackARUCO->feed_new_camera(message);
     trackDATABASE->append_new_measurements(trackARUCO->get_feature_database());
   }
-  rT2 = boost::posix_time::microsec_clock::local_time();
+  rT2 = std::chrono::system_clock::now();
 
   // Check if we should do zero-velocity, if so update the state with it
   // Note that in the case that we only use in the beginning initialization phase
@@ -366,7 +366,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   if (state->_timestamp != message.timestamp) {
     propagator->propagate_and_clone(state, message.timestamp);
   }
-  rT3 = boost::posix_time::microsec_clock::local_time();
+  rT3 = std::chrono::system_clock::now();
 
   // If we have not reached max clones, we should just return...
   // This isn't super ideal, but it keeps the logic after this easier...
@@ -544,7 +544,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   if ((int)featsup_MSCKF.size() > state->_options.max_msckf_in_update)
     featsup_MSCKF.erase(featsup_MSCKF.begin(), featsup_MSCKF.end() - state->_options.max_msckf_in_update);
   updaterMSCKF->update(state, featsup_MSCKF);
-  rT4 = boost::posix_time::microsec_clock::local_time();
+  rT4 = std::chrono::system_clock::now();
 
   // Perform SLAM delay init and update
   // NOTE: that we provide the option here to do a *sequential* update
@@ -562,9 +562,9 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     feats_slam_UPDATE_TEMP.insert(feats_slam_UPDATE_TEMP.end(), featsup_TEMP.begin(), featsup_TEMP.end());
   }
   feats_slam_UPDATE = feats_slam_UPDATE_TEMP;
-  rT5 = boost::posix_time::microsec_clock::local_time();
+  rT5 = std::chrono::system_clock::now();
   updaterSLAM->delayed_init(state, feats_slam_DELAYED);
-  rT6 = boost::posix_time::microsec_clock::local_time();
+  rT6 = std::chrono::system_clock::now();
 
   //===================================================================================
   // Update our visualization feature set, and clean up the old features
@@ -614,20 +614,20 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
 
   // Finally marginalize the oldest clone if needed
   StateHelper::marginalize_old_clone(state);
-  rT7 = boost::posix_time::microsec_clock::local_time();
+  rT7 = std::chrono::system_clock::now();
 
   //===================================================================================
   // Debug info, and stats tracking
   //===================================================================================
 
   // Get timing statitics information
-  double time_track = (rT2 - rT1).total_microseconds() * 1e-6;
-  double time_prop = (rT3 - rT2).total_microseconds() * 1e-6;
-  double time_msckf = (rT4 - rT3).total_microseconds() * 1e-6;
-  double time_slam_update = (rT5 - rT4).total_microseconds() * 1e-6;
-  double time_slam_delay = (rT6 - rT5).total_microseconds() * 1e-6;
-  double time_marg = (rT7 - rT6).total_microseconds() * 1e-6;
-  double time_total = (rT7 - rT1).total_microseconds() * 1e-6;
+  double time_track = std::chrono::duration_cast<std::chrono::duration<double>>(rT2 - rT1).count();
+  double time_prop = std::chrono::duration_cast<std::chrono::duration<double>>(rT3 - rT2).count();
+  double time_msckf = std::chrono::duration_cast<std::chrono::duration<double>>(rT4 - rT3).count();
+  double time_slam_update = std::chrono::duration_cast<std::chrono::duration<double>>(rT5 - rT4).count();
+  double time_slam_delay = std::chrono::duration_cast<std::chrono::duration<double>>(rT6 - rT5).count();
+  double time_marg = std::chrono::duration_cast<std::chrono::duration<double>>(rT7 - rT6).count();
+  double time_total = std::chrono::duration_cast<std::chrono::duration<double>>(rT7 - rT1).count();
 
   // Timing information
   printf(BLUE "[TIME]: %.4f seconds for tracking\n" RESET, time_track);
@@ -754,8 +754,8 @@ bool VioManager::try_to_initialize() {
 void VioManager::retriangulate_active_tracks(const ov_core::CameraData &message) {
 
   // Start timing
-  boost::posix_time::ptime retri_rT1, retri_rT2, retri_rT3, retri_rT4, retri_rT5;
-  retri_rT1 = boost::posix_time::microsec_clock::local_time();
+  std::chrono::system_clock::time_point retri_rT1, retri_rT2, retri_rT3, retri_rT4, retri_rT5;
+  retri_rT1 = std::chrono::system_clock::now();
 
   // Clear old active track data
   active_tracks_time = state->_timestamp;
@@ -801,7 +801,7 @@ void VioManager::retriangulate_active_tracks(const ov_core::CameraData &message)
       it0++;
     }
   }
-  retri_rT2 = boost::posix_time::microsec_clock::local_time();
+  retri_rT2 = std::chrono::system_clock::now();
 
   // Return if no features
   if (active_features.empty() && state->_features_SLAM.empty())
@@ -826,7 +826,7 @@ void VioManager::retriangulate_active_tracks(const ov_core::CameraData &message)
     // Append to our map
     clones_cam.insert({clone_calib.first, clones_cami});
   }
-  retri_rT3 = boost::posix_time::microsec_clock::local_time();
+  retri_rT3 = std::chrono::system_clock::now();
 
   // 3. Try to triangulate all features that have measurements
   auto it1 = active_features.begin();
@@ -847,7 +847,7 @@ void VioManager::retriangulate_active_tracks(const ov_core::CameraData &message)
     }
     it1++;
   }
-  retri_rT4 = boost::posix_time::microsec_clock::local_time();
+  retri_rT4 = std::chrono::system_clock::now();
 
   // Return if no features
   if (active_features.empty() && state->_features_SLAM.empty())
@@ -914,12 +914,12 @@ void VioManager::retriangulate_active_tracks(const ov_core::CameraData &message)
     uvd << uv_dist, depth;
     active_tracks_uvd.insert({feat.first, uvd});
   }
-  retri_rT5 = boost::posix_time::microsec_clock::local_time();
+  retri_rT5 = std::chrono::system_clock::now();
 
   // Timing information
-  // printf(CYAN "[RETRI-TIME]: %.4f seconds for cleaning\n" RESET, (retri_rT2-retri_rT1).total_microseconds() * 1e-6);
-  // printf(CYAN "[RETRI-TIME]: %.4f seconds for triangulate setup\n" RESET, (retri_rT3-retri_rT2).total_microseconds() * 1e-6);
-  // printf(CYAN "[RETRI-TIME]: %.4f seconds for triangulation\n" RESET, (retri_rT4-retri_rT3).total_microseconds() * 1e-6);
-  // printf(CYAN "[RETRI-TIME]: %.4f seconds for re-projection\n" RESET, (retri_rT5-retri_rT4).total_microseconds() * 1e-6);
-  // printf(CYAN "[RETRI-TIME]: %.4f seconds total\n" RESET, (retri_rT5-retri_rT1).total_microseconds() * 1e-6);
+  // printf(CYAN "[RETRI-TIME]: %.4f seconds for cleaning\n" RESET, (retri_rT2std::chrono::duration_cast<std::chrono::duration<double>>-retri_rT1).count());
+  // printf(CYAN "[RETRI-TIME]: %.4f seconds for triangulate setup\n" RESET, (retri_rT3std::chrono::duration_cast<std::chrono::duration<double>>-retri_rT2).count());
+  // printf(CYAN "[RETRI-TIME]: %.4f seconds for triangulation\n" RESET, (retri_rT4std::chrono::duration_cast<std::chrono::duration<double>>-retri_rT3).count());
+  // printf(CYAN "[RETRI-TIME]: %.4f seconds for re-projection\n" RESET, (retri_rT5std::chrono::duration_cast<std::chrono::duration<double>>-retri_rT4).count());
+  // printf(CYAN "[RETRI-TIME]: %.4f seconds total\n" RESET, (retri_rT5std::chrono::duration_cast<std::chrono::duration<double>>-retri_rT1).count());
 }

@@ -28,7 +28,7 @@
 #include <thread>
 #include <unordered_map>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <chrono>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
@@ -195,7 +195,7 @@ protected:
   std::atomic<size_t> currid;
 
   // Timing variables (most children use these...)
-  boost::posix_time::ptime rT1, rT2, rT3, rT4, rT5, rT6, rT7;
+  std::chrono::system_clock::time_point rT1, rT2, rT3, rT4, rT5, rT6, rT7;
 };
 
 } // namespace ov_core

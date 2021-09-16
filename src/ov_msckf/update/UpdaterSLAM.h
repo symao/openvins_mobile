@@ -36,7 +36,7 @@
 #include "UpdaterHelper.h"
 #include "UpdaterOptions.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <chrono>
 #include <boost/math/distributions/chi_squared.hpp>
 
 namespace ov_msckf {
