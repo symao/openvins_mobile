@@ -324,7 +324,7 @@ static ov_msckf::VioManagerOptions paramZjuVislam() {
   params.state_options.num_cameras = 1;
   params.dt_slam_delay = 3;
   params.init_window_time = 0.75;
-  params.init_imu_thresh = 1.5;
+  params.init_imu_thresh = 1.0;
   params.gravity_mag = 9.81;
 
   params.state_options.feat_rep_msckf = LandmarkRepresentation::Representation::GLOBAL_3D;
@@ -368,34 +368,17 @@ static ov_msckf::VioManagerOptions paramZjuVislam() {
   if (1) {
     int id = 0;
     Eigen::Matrix<double, 8, 1> cam_calib;
-    cam_calib << 458.654, 457.296, 367.215, 248.375, -0.28340811, 0.07395907, 0.00019359, 1.76187114e-05;
+    cam_calib << 493.0167, 491.55953, 317.97856, 242.392, 0, 0, 0, 0;
+    Eigen::Isometry3d T_CtoI = Eigen::Isometry3d::Identity();
+    T_CtoI.linear() = Eigen::Quaterniond(0, 0.707107, -0.707107, 0).toRotationMatrix();
+    T_CtoI.translation() << -0.00165, -0.009950000000000001, 0.00067;
     Eigen::Matrix<double, 7, 1> cam_eigen;
-    Eigen::Matrix4d T_CtoI;
-    T_CtoI << 0.0148655429818, -0.999880929698, 0.00414029679422, -0.0216401454975, 0.999557249008, 0.0149672133247,
-        0.025715529948, -0.064676986768, -0.0257744366974, 0.00375618835797, 0.999660727178, 0.00981073058949, 0.0, 0.0,
-        0.0, 1.0;
-    cam_eigen.block(0, 0, 4, 1) = rot_2_quat(T_CtoI.block(0, 0, 3, 3).transpose());
-    cam_eigen.block(4, 0, 3, 1) = -T_CtoI.block(0, 0, 3, 3).transpose() * T_CtoI.block(0, 3, 3, 1);
+    cam_eigen.block(0, 0, 4, 1) = rot_2_quat(T_CtoI.linear().transpose());
+    cam_eigen.block(4, 0, 3, 1) = -T_CtoI.linear().transpose() * T_CtoI.translation();
     params.camera_fisheye.insert({id, false});
     params.camera_intrinsics.insert({id, cam_calib});
     params.camera_extrinsics.insert({id, cam_eigen});
-    params.camera_wh.insert({id, std::make_pair(752, 480)});
-  }
-  if (params.use_stereo) {
-    int id = 1;
-    Eigen::Matrix<double, 8, 1> cam_calib;
-    cam_calib << 457.587, 456.134, 379.999, 255.238, -0.28368365, 0.07451284, -0.00010473, -3.55590700e-05;
-    Eigen::Matrix<double, 7, 1> cam_eigen;
-    Eigen::Matrix4d T_CtoI;
-    T_CtoI << 0.0125552670891, -0.999755099723, 0.0182237714554, -0.0198435579556, 0.999598781151, 0.0130119051815,
-        0.0251588363115, 0.0453689425024, -0.0253898008918, 0.0179005838253, 0.999517347078, 0.00786212447038, 0.0, 0.0,
-        0.0, 1.0;
-    cam_eigen.block(0, 0, 4, 1) = rot_2_quat(T_CtoI.block(0, 0, 3, 3).transpose());
-    cam_eigen.block(4, 0, 3, 1) = -T_CtoI.block(0, 0, 3, 3).transpose() * T_CtoI.block(0, 3, 3, 1);
-    params.camera_fisheye.insert({id, false});
-    params.camera_intrinsics.insert({id, cam_calib});
-    params.camera_extrinsics.insert({id, cam_eigen});
-    params.camera_wh.insert({id, std::make_pair(752, 480)});
+    params.camera_wh.insert({id, std::make_pair(640, 480)});
   }
   return params;
 }
