@@ -1,7 +1,9 @@
 #pragma once
 #include <map>
 #include <string>
-#include <iostream>
+#include <Eigen/Dense>
+#include <vs_common/vs_data.h>
+#include <vs_common/vs_cv_convert.h>
 #include <vs_common/vs_vio_data_loader.h>
 #include "core/VioManager.h"
 

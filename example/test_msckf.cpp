@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <memory>
-#include <vs_common/vs_common.h>
 #include "config.h"
 
 #define ENABLE_VIZ 1
+
+#if ENABLE_VIZ
+#include <vs_common/vs_viz3d.h>
+#endif
 
 using namespace ov_msckf;
 

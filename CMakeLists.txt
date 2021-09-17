@@ -4,6 +4,7 @@ project(msckf)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3")
 set(BUILD_DEMO 1)
+set(BUILD_VS_COMMON 1)
 
 find_package(OpenCV 3 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -16,6 +17,14 @@ include_directories(
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+
+# build vs_common
+if(${BUILD_VS_COMMON})
+    # use 3rdparty version
+    include_directories(3rdparty)
+    file(GLOB VS_COMMON_SRC 3rdparty/vs_common/*.cpp)
+    add_library(vs_common ${VS_COMMON_SRC})
+endif()
 
 file(GLOB_RECURSE OV_CORE_SRC src/ov_core/*.cpp)
 add_library(ov_core SHARED ${OV_CORE_SRC})
