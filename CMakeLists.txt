@@ -8,12 +8,14 @@ set(BUILD_VS_COMMON 1)
 
 find_package(OpenCV 3 REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Ceres REQUIRED)
 
 include_directories(
     src/ov_core
     src/ov_msckf
     ${OpenCV_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
+    ${CERES_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -37,5 +39,5 @@ list(APPEND OV_LIBS ov_msckf ov_core)
 if(${BUILD_DEMO})
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 add_executable(test_msckf example/test_msckf.cpp)
-target_link_libraries(test_msckf ${OV_LIBS} vs_common ${OpenCV_LIBS} pthread)
+target_link_libraries(test_msckf ${OV_LIBS} vs_common ${OpenCV_LIBS} ${CERES_LIBRARIES} pthread)
 endif()
