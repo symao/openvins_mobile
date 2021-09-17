@@ -25,8 +25,7 @@
 #include "State.h"
 #include "types/Landmark.h"
 #include "utils/colors.h"
-
-#include <boost/math/distributions/chi_squared.hpp>
+#include "utils/chi_square_table.h"
 
 using namespace ov_core;
 

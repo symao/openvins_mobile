@@ -34,8 +34,6 @@
 #include "UpdaterOptions.h"
 
 #include <chrono>
-#include <boost/math/distributions/chi_squared.hpp>
-
 namespace ov_msckf {
 
 /**
@@ -75,13 +73,6 @@ public:
     _noises.sigma_a_2 = std::pow(_noises.sigma_a, 2);
     _noises.sigma_wb_2 = std::pow(_noises.sigma_wb, 2);
     _noises.sigma_ab_2 = std::pow(_noises.sigma_ab, 2);
-
-    // Initialize the chi squared test table with confidence level 0.95
-    // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
-    for (int i = 1; i < 1000; i++) {
-      boost::math::chi_squared chi_squared_dist(i);
-      chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
-    }
   }
 
   /**
@@ -143,9 +134,6 @@ protected:
 
   /// Max disparity (pixels) that we should consider a zupt with
   double _zupt_max_disparity = 1.0;
-
-  /// Chi squared 95th percentile table (lookup would be size of residual)
-  std::map<int, double> chi_squared_table;
 
   /// Our history of IMU messages (time, angular, linear)
   std::vector<ov_core::ImuData> imu_data;

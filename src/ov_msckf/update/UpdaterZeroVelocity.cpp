@@ -154,11 +154,10 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
 
   // Get our threshold (we precompute up to 1000 but handle the case that it is more)
   double chi2_check;
-  if (res.rows() < 1000) {
-    chi2_check = chi_squared_table[res.rows()];
+  if (res.rows() < CHI_SQUARE_TABLE_95TH.size()) {
+    chi2_check = CHI_SQUARE_TABLE_95TH[res.rows()];
   } else {
-    boost::math::chi_squared chi_squared_dist(res.rows());
-    chi2_check = boost::math::quantile(chi_squared_dist, 0.95);
+    chi2_check = CHI_SQUARE_TABLE_95TH.back();
     printf(YELLOW "[ZUPT]: chi2_check over the residual limit - %d\n" RESET, (int)res.rows());
   }
 

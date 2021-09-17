@@ -30,6 +30,7 @@
 #include "types/LandmarkRepresentation.h"
 #include "utils/colors.h"
 #include "utils/quat_ops.h"
+#include "utils/chi_square_table.h"
 
 namespace ov_msckf {
 

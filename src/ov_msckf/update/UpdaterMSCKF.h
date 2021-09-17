@@ -36,7 +36,6 @@
 #include "UpdaterOptions.h"
 
 #include <chrono>
-#include <boost/math/distributions/chi_squared.hpp>
 
 namespace ov_msckf {
 
@@ -66,13 +65,6 @@ public:
 
     // Save our feature initializer
     initializer_feat = std::unique_ptr<FeatureInitializer>(new FeatureInitializer(feat_init_options));
-
-    // Initialize the chi squared test table with confidence level 0.95
-    // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
-    for (int i = 1; i < 500; i++) {
-      boost::math::chi_squared chi_squared_dist(i);
-      chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
-    }
   }
 
   /**
@@ -89,9 +81,6 @@ protected:
 
   /// Feature initializer class object
   std::unique_ptr<FeatureInitializer> initializer_feat;
-
-  /// Chi squared 95th percentile table (lookup would be size of residual)
-  std::map<int, double> chi_squared_table;
 };
 
 } // namespace ov_msckf
